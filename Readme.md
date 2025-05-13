@@ -9,7 +9,7 @@ This tool generates subtitles for videos by extracting audio, converting it into
 1. Clone the repository
 
 ```bash
-git clone https://github.com/datle/fwlkjfew.git
+git clone https://github.com/Datle-2003/video-subtitle-generator.git
 cd Video_Subtitle_Generator
 ```
 
