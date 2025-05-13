@@ -173,21 +173,10 @@ class MediaProcessor:
                   hardcode: bool = False) -> str:
         """
         Add subtitles to a media file using ffmpeg
-        
-        Args:
-            subtitle_file: Path to the subtitle file (.srt, .ass, .vtt)
-            output_file: Path to the output file. If None, creates a file in the same directory
-                        as the original media with '_subtitled' suffix
-            hardcode: If True, burns subtitles into the video (hardcoding). 
-                     If False, adds subtitles as a separate stream (softcoding)
-        
-        Returns:
-            Path to the output file with subtitles
         """
         if not os.path.exists(subtitle_file):
             raise FileNotFoundError(f"Subtitle file not found: {subtitle_file}")
         
-        # Create output filename if not provided
         if not output_file:
             base_name, ext = os.path.splitext(self.media.file_path)
             output_file = f"{base_name}_subtitled{ext}"
@@ -196,7 +185,6 @@ class MediaProcessor:
             input_stream = ffmpeg.input(self.media.file_path)
             
             if hardcode:
-                # Hardcode subtitles directly into the video
                 logging.info(f"Hardcoding subtitles from {subtitle_file} into video...")
                 
                 # For video files
@@ -205,17 +193,17 @@ class MediaProcessor:
                     video = input_stream.video.filter('subtitles', subtitle_file)
                     # Keep the audio stream unchanged
                     audio = input_stream.audio
-                    
                     # Combine streams and output
                     output = ffmpeg.output(video, audio, output_file)
-                    
+                
+                # For audio files
                 else:
-                    # For audio, create a simple visualization with subtitles
-                    logging.info("Creating audio visualization with subtitles")
-                    # Create black background with subtitles
-                    video = input_stream.filter('showwaves', s='640x360').filter('subtitles', subtitle_file)
-                    audio = input_stream.audio
-                    output = ffmpeg.output(video, audio, output_file)
+                    # logging.info("Creating audio visualization with subtitles")
+                    # video = input_stream.filter('showwaves', s='640x360').filter('subtitles', subtitle_file)
+                    # audio = input_stream.audio
+                    # output = ffmpeg.output(video, audio, output_file)
+                    logging.error("Only video files can be hardcoded with subtitles.")
+                    raise ValueError("Only video files can be hardcoded with subtitles.")
                     
             else:
                 # Soft-code (add subtitles as a separate stream)
@@ -248,28 +236,3 @@ class MediaProcessor:
         except ffmpeg.Error as e:
             logging.error(f"FFmpeg error adding subtitles: {e}")
             raise
-
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    
-    # input_file_video = 'tests/The “Perfect” Karambit - steppa (1080p, h264).mp4'  # Thay thế bằng tệp video của bạn
-    input_file_video = "output/output.mp3"
-    output_audio_file = 'output/processed_for_whisper2.wav'
-
-    try:
-        media_info = Media(input_file_video)
-        print(media_info) 
-        processor = MediaProcessor(media_info, output_audio_file)
-
-        # 3. Thực hiện trích xuất/chuyển đổi
-        generated_audio_path = processor.extract_or_convert_audio()
-        logging.info(f"Audio processing complete. Output file: {generated_audio_path}")
-
-    except (FileNotFoundError, ValueError, RuntimeError, TypeError) as e:
-        logging.error(f"Processing failed: {e}")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred in main: {e}")
-
-        

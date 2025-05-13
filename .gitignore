@@ -4,3 +4,5 @@ output/
 whisper.cpp/
 __pycache__/
 .env
+*.srt
+run.sh

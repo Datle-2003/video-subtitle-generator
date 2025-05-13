@@ -2,6 +2,118 @@ import subprocess
 import os
 import logging
 
+
+supported_languages = {
+        "auto": "Auto-detect",  # Special case
+        "en": "English",
+        "zh": "Chinese",
+        "de": "German",
+        "es": "Spanish",
+        "ru": "Russian",
+        "ko": "Korean",
+        "fr": "French",
+        "ja": "Japanese",
+        "pt": "Portuguese",
+        "tr": "Turkish",
+        "pl": "Polish",
+        "ca": "Catalan",
+        "nl": "Dutch",
+        "ar": "Arabic",
+        "sv": "Swedish",
+        "it": "Italian",
+        "id": "Indonesian",
+        "hi": "Hindi",
+        "fi": "Finnish",
+        "vi": "Vietnamese",
+        "he": "Hebrew",
+        "uk": "Ukrainian",
+        "el": "Greek",
+        "ms": "Malay",
+        "cs": "Czech",
+        "ro": "Romanian",
+        "da": "Danish",
+        "hu": "Hungarian",
+        "ta": "Tamil",
+        "no": "Norwegian",
+        "th": "Thai",
+        "ur": "Urdu",
+        "hr": "Croatian",
+        "bg": "Bulgarian",
+        "lt": "Lithuanian",
+        "la": "Latin",
+        "mi": "Maori",
+        "ml": "Malayalam",
+        "cy": "Welsh",
+        "sk": "Slovak",
+        "te": "Telugu",
+        "fa": "Persian",
+        "lv": "Latvian",
+        "bn": "Bengali",
+        "sr": "Serbian",
+        "az": "Azerbaijani",
+        "sl": "Slovenian",
+        "kn": "Kannada",
+        "et": "Estonian",
+        "mk": "Macedonian",
+        "br": "Breton",
+        "eu": "Basque",
+        "is": "Icelandic",
+        "hy": "Armenian",
+        "ne": "Nepali",
+        "mn": "Mongolian",
+        "bs": "Bosnian",
+        "kk": "Kazakh",
+        "sq": "Albanian",
+        "sw": "Swahili",
+        "gl": "Galician",
+        "mr": "Marathi",
+        "pa": "Punjabi",
+        "si": "Sinhala",
+        "km": "Khmer",
+        "sn": "Shona",
+        "yo": "Yoruba",
+        "so": "Somali",
+        "af": "Afrikaans",
+        "oc": "Occitan",
+        "ka": "Georgian",
+        "be": "Belarusian",
+        "tg": "Tajik",
+        "sd": "Sindhi",
+        "gu": "Gujarati",
+        "am": "Amharic",
+        "yi": "Yiddish",
+        "lo": "Lao",
+        "uz": "Uzbek",
+        "fo": "Faroese",
+        "ht": "Haitian Creole",
+        "ps": "Pashto",
+        "tk": "Turkmen",
+        "nn": "Nynorsk",
+        "mt": "Maltese",
+        "sa": "Sanskrit",
+        "lb": "Luxembourgish",
+        "my": "Myanmar",
+        "bo": "Tibetan",
+        "tl": "Tagalog",
+        "mg": "Malagasy",
+        "as": "Assamese",
+        "tt": "Tatar",
+        "haw": "Hawaiian",
+        "ln": "Lingala",
+        "ha": "Hausa",
+        "ba": "Bashkir",
+        "jw": "Javanese",
+        "su": "Sundanese",
+        "yue": "Cantonese"
+    }
+
+def is_supported_language(language: str) -> bool:
+    return language in supported_languages
+
+def get_supported_languages() -> list:
+    # key: value
+    return [f"{key}: {value}" for key, value in supported_languages.items()]
+
 class WhisperTranscriber:
     def __init__(self, whisper_dir: str, model_name: str = "ggml-small.bin"):
         self.whisper_dir = os.path.abspath(whisper_dir)
@@ -22,6 +134,9 @@ class WhisperTranscriber:
         logging.info(f"Whisper executable found at: {self.executable_path}")
 
     def transcribe(self, audio_wav_path: str, language: str = "auto", output_format: str = "txt") -> str:
+        if not is_supported_language(language):
+            raise ValueError(f"Unsupported language: {language}. Supported languages are: {', '.join(supported_languages.keys())}")
+
         audio_wav_path = os.path.abspath(audio_wav_path)
         if not os.path.isfile(audio_wav_path):
             raise FileNotFoundError(f"Audio file not found: {audio_wav_path}")
@@ -74,21 +189,3 @@ class WhisperTranscriber:
         except Exception as e:
             logging.error(f"Unexpected error during transcription: {e}")
             raise RuntimeError(f"Unexpected error: {e}") from e
-
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-    WHISPER_CPP_PROJECT_DIR = "/home/datle/Documents/WorkSpace/Code/Video_Subtitle_Generator/speech_to_text/whisper.cpp"
-    INPUT_AUDIO_FILE = "/home/datle/Documents/WorkSpace/Code/Video_Subtitle_Generator/output.wav"
-    MODEL = "ggml-small.bin"
-    LANGUAGE = "auto"
-    OUTPUT_FORMAT = "srt"
-
-    try:
-        transcriber = WhisperTranscriber(whisper_dir=WHISPER_CPP_PROJECT_DIR, model_name=MODEL)
-        transcript = transcriber.transcribe(INPUT_AUDIO_FILE, language=LANGUAGE, output_format=OUTPUT_FORMAT)
-
-    except Exception as e:
-        logging.error(f"Error: {e}")

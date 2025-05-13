@@ -142,8 +142,6 @@ class Translator:
                         llm_response = self.llm.generate(prompt, chunk_content, file_format)
                         translated_response_str = llm_response.strip()
 
-                        logging.info(f"Translated response received: \n{translated_response_str}")
-
                         if self._is_valid_response(translated_response_str, matches_in_chunk):
                             logging.debug(f"Chunk translation successful for chunk starting at {chunk_start}.")
                             translation_successful = True
@@ -244,41 +242,3 @@ class Translator:
                     logging.warning(f"Block {i+1}: Translated text is empty, but original text ('{original_text_content[:30]}...') was not.")
                     return False
         return True
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-    INPUT_SUBTITLE_FILE = "/home/datle/Documents/WorkSpace/Code/Video_Subtitle_Generator/output/processed_for_whisper.vtt" # Đổi thành .srt hoặc .vtt
-    TARGET_LANGUAGE = "vi"
-    OUTPUT_SUBTITLE_FILE = None # Tự tạo tên file
-    SOURCE_LANGUAGE = "en"
-    CHUNK_SIZE = 10
-
-    now = time.time()
-    # Đo thời gian thực hiện
-
-    try:
-
-        translator = Translator(llm_provider=GeminiLLM(model_name="gemini-2.0-flash"))
-        translated_file = translator.translate_subtitle_file_by_chunk(
-            input_file_path=INPUT_SUBTITLE_FILE,
-            target_language=TARGET_LANGUAGE,
-            output_file_path=OUTPUT_SUBTITLE_FILE,
-            source_language=SOURCE_LANGUAGE,
-            metadata=None,
-            chunk_size=CHUNK_SIZE
-        )
-
-        print(f"Successfully translated subtitle file (chunk method) saved to: {translated_file}")
-
-    
-    except FileNotFoundError as e:
-        logging.error(f"Error: {e}")
-    except ValueError as e:
-         logging.error(f"Configuration or Value Error: {e}")
-    except Exception as e:
-        logging.error(f"Translation failed: {e}", exc_info=True)
-
-    time_taken = time.time() - now
-    print(f"Time taken for translation: {time_taken:.2f} seconds")

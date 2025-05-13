@@ -24,6 +24,7 @@ class GeminiLLM(LLMInterface):
     def generate(self, prompt: str, original_chunk_for_fallback: str, file_format: str) -> str:
         try:
             logging.info(f"Length of prompt: {len(prompt)}")
+            logging.info(f"Prompt: {prompt}")
             response = self.model.generate_content(prompt)
             if not response.candidates or not response.candidates[0].content.parts or \
                (response.prompt_feedback and response.prompt_feedback.block_reason):

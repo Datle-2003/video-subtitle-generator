@@ -5,7 +5,7 @@ import os
 import time
 from translation.translation import Translator
 from audio_extraction.extract_audio import Media, MediaProcessor
-from speech_to_text.transcribe import WhisperTranscriber
+from speech_to_text.transcribe import WhisperTranscriber, get_supported_languages
 from translation.gemini import GeminiLLM
 
 
@@ -20,10 +20,10 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--output_file",
+        "--output_path",
         type=str,
         required=False,
-        help="Path to the final output file. If not provided, it will be saved in the same directory as input_file",
+        help="Path to save the final output file (default: the current directory)",
     )
 
     parser.add_argument(
@@ -44,41 +44,9 @@ def parse_args():
     parser.add_argument(
         "--model",
         type=str,
-        required=False,
+        required=True,
         default="small",
-        help="Model to be used for transcription. Options: tiny, base, small, medium, large. Default is 'small'",
-    )
-    
-    parser.add_argument(
-        "--skip_extract",
-        action="store_true",
-        help="Skip audio extraction step if you already have a WAV file",
-    )
-    
-    parser.add_argument(
-        "--skip_transcribe",
-        action="store_true",
-        help="Skip transcription step if you already have an SRT file",
-    )
-    
-    parser.add_argument(
-        "--skip_translate",
-        action="store_true",
-        help="Skip translation step if you already have a translated SRT file",
-    )
-    
-    parser.add_argument(
-        "--subtitle_file",
-        type=str,
-        required=False,
-        help="Path to existing subtitle file (if skipping extraction/transcription)",
-    )
-    
-    parser.add_argument(
-        "--hardcode",
-        action="store_true",
-        default=True,
-        help="Burn subtitles directly into the video (default: add as separate track)",
+        help="Model to be used for transcription. Options: tiny, base, small, medium, large.",
     )
     
     parser.add_argument(
@@ -91,112 +59,136 @@ def parse_args():
     parser.add_argument(
         "--whisper_dir",
         type=str,
-        default="/home/datle/Documents/WorkSpace/Code/Video_Subtitle_Generator/speech_to_text/whisper.cpp",
+        default="speech_to_text/whisper.cpp",
         help="Path to whisper.cpp directory",
     )
     
     return parser.parse_args()
 
 
+def remove_temporary_files(file_path):
+    # remove the temporary files created during the process
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        logging.info(f"Temporary file removed: {file_path}")
+
+
+
 def process_video(args):
     """Main workflow for processing video and generating subtitles"""
+
+    if args.whisper_dir.startswith('/'):
+        whisper_dir = args.whisper_dir
+    else:
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        whisper_dir = os.path.join(project_root, args.whisper_dir)
+    
+    logging.info(f"Using whisper.cpp directory: {whisper_dir}")
     
     start_time = time.time()
     audio_file = None
     subtitle_file = None
     translated_subtitle_file = None
-    
-    # Step 1: Extract audio from video if needed
-    if not args.skip_extract:
-        logging.info("Step 1/4: Extracting audio from input file...")
-        try:
-            media_info = Media(args.input_file)
-            processor = MediaProcessor(media_info)
-            audio_file = processor.extract_or_convert_audio()
-            logging.info(f"Audio extraction complete: {audio_file}")
-        except Exception as e:
-            logging.error(f"Audio extraction failed: {e}")
-            return False
-    else:
-        if args.subtitle_file:
-            logging.info(f"Skipping audio extraction, using existing subtitle file: {args.subtitle_file}")
-        else:
-            logging.error("Must provide --subtitle_file when using --skip_extract")
-            return False
-    
-    # Step 2: Transcribe audio to subtitles if needed
-    if not args.skip_transcribe:
-        if not audio_file and not args.subtitle_file:
-            logging.error("No audio file available for transcription")
-            return False
-            
-        logging.info("Step 2/4: Transcribing audio to subtitles...")
-        try:
-            # Add .bin extension if needed
-            model_name = args.model if args.model.startswith("ggml-") else f"ggml-{args.model}.bin"
-            
-            transcriber = WhisperTranscriber(whisper_dir=args.whisper_dir, model_name=model_name)
-            subtitle_file = transcriber.transcribe(
-                audio_wav_path=audio_file,
-                language=args.source_language,
-                output_format="srt"
-            )
-            logging.info(f"Transcription complete: {subtitle_file}")
-        except Exception as e:
-            logging.error(f"Transcription failed: {e}")
-            return False
-    else:
-        subtitle_file = args.subtitle_file
-        if not subtitle_file:
-            logging.error("Must provide --subtitle_file when using --skip_transcribe")
-            return False
-    
-    # Step 3: Translate subtitles if needed
-    if not args.skip_translate:
-        logging.info("Step 3/4: Translating subtitles...")
-        try:
-            translator = Translator(llm_provider=GeminiLLM(model_name="gemini-2.0-flash"))
-            translated_subtitle_file = translator.translate_subtitle_file_by_chunk(
-                input_file_path=subtitle_file,
-                target_language=args.target_language,
-                output_file_path=None,  
-                source_language=args.source_language if args.source_language != "auto" else "en",
-                chunk_size=args.chunk_size
-            )
-            logging.info(f"Translation complete: {translated_subtitle_file}")
-        except Exception as e:
-            logging.error(f"Translation failed: {e}")
-            return False
-    else:
-        translated_subtitle_file = subtitle_file
-        logging.info(f"Skipping translation, using subtitle file: {translated_subtitle_file}")
-    
-    # Step 4: Add subtitles to video
-    logging.info("Step 4/4: Adding subtitles to video...")
+    # Step 1: Extract audio from video
     try:
+        logging.info("Step 1/3: Extracting audio from video file...")
         media_info = Media(args.input_file)
         processor = MediaProcessor(media_info)
-        
-        final_output = processor.add_subtitles(
-            subtitle_file=translated_subtitle_file,
-            output_file=args.output_file,
-            hardcode=args.hardcode
-        )
-        logging.info(f"Final video with subtitles created: {final_output}")
+        audio_file = processor.extract_or_convert_audio()
+        logging.info(f"Audio extraction complete: {audio_file}")
     except Exception as e:
-        logging.error(f"Adding subtitles failed: {e}")
+        logging.error(f"Audio extraction failed: {e}")
         return False
     
+    # Step 2: Transcribe audio to subtitles
+    try:
+        logging.info("Step 2/3: Transcribing audio to subtitles...")
+        model_name = args.model if args.model.startswith("ggml-") else f"ggml-{args.model}.bin"
+        
+        transcriber = WhisperTranscriber(whisper_dir=whisper_dir, model_name=model_name)
+        subtitle_file = transcriber.transcribe(
+            audio_wav_path=audio_file,
+            language=args.source_language,
+            output_format="srt"
+        )
+        logging.info(f"Transcription complete: {subtitle_file}")
+    except Exception as e:
+        logging.error(f"Transcription failed: {e}")
+        return False
+    
+    # Step 3: Translate subtitles
+    try:
+        logging.info("Step 3/3: Translating subtitles...")
+        translator = Translator(llm_provider=GeminiLLM(model_name="gemini-2.0-flash"))
+        translated_subtitle_file = translator.translate_subtitle_file_by_chunk(
+            input_file_path=subtitle_file,
+            target_language=args.target_language,
+            output_file_path=None,  
+            source_language=args.source_language,
+            chunk_size=args.chunk_size
+        )
+        logging.info(f"Translation complete: {translated_subtitle_file}")
+    except Exception as e:
+        logging.error(f"Translation failed: {e}")
+        return False
+    
+    # Move the translated file to output_path if specified
+    if args.output_path:
+        if not os.path.exists(args.output_path):
+            os.makedirs(args.output_path, exist_ok=True)
+            logging.info(f"Created output directory: {args.output_path}")
+        
+        # Get the filename from the path
+        filename = os.path.basename(translated_subtitle_file)
+        destination_path = os.path.join(args.output_path, filename)
+        
+        # Copy the file to destination
+        import shutil
+        shutil.copy2(translated_subtitle_file, destination_path)
+        
+        # Update the path
+        logging.info(f"Moved translated subtitle file to: {destination_path}")
+        translated_subtitle_file = destination_path
+
     total_time = time.time() - start_time
     logging.info(f"Complete workflow finished in {total_time:.2f} seconds")
+    logging.info(f"Final subtitle file: {translated_subtitle_file}")
+
+
+
+    # Clean up temporary files
+    remove_temporary_files(audio_file)
+    remove_temporary_files(subtitle_file)
+
+
     return True
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
+    if "--help" in sys.argv:
+        print("Usage: python main.py --input_file <input_file> --target_language <target_language> [options]")
+        print("Options:")
+        print("  --output_file <output_file>       Path to the final output file")
+        print("  --source_language <source_lang>    Language code for the input file (default: 'auto')")
+        print("  --model <model>                    Model for transcription (default: 'small')")
+        print("  --chunk_size <chunk_size>          Number of subtitle segments to translate at once (default: 10)")
+        print("  --whisper_dir <whisper_dir>        Path to whisper.cpp directory (default: 'speech_to_text/whisper.cpp')")
+        sys.exit(0)
+
+    if "--list-languages" in sys.argv:
+        languages = get_supported_languages()
+        print("Supported languages:")
+        for lang in languages:
+            print(f"  {lang}")
+        sys.exit(0)
+
     args = parse_args()
     success = process_video(args)
+
+    
+    
     
     if success:
         logging.info("Video processing completed successfully!")
