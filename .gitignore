@@ -1,1 +1,6 @@
 .venv
+tests/
+output/
+whisper.cpp/
+__pycache__/
+.env
