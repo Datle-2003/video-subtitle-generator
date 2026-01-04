@@ -43,7 +43,7 @@ class Media:
         self.format_info: Dict[str, Any] = {}
         self.metadata: Dict[str, str] = {}
         self.duration: Optional[float] = None
-        self.media_type: str = get_media_type(file_path)
+        self.media_type: Optional[str] = get_media_type(file_path)
         self._probe_file()
         self._extract_info()
 
@@ -156,13 +156,13 @@ class MediaProcessor:
                                        ac=1,
                                        format='wav') 
 
-            stdout, stderr = ffmpeg.run(output_stream, cmd=['ffmpeg', '-hide_banner'], overwrite_output=True, capture_stdout=True, capture_stderr=True)
+            stdout, stderr = ffmpeg.run(output_stream, cmd='ffmpeg -hide_banner', overwrite_output=True, capture_stdout=True, capture_stderr=True)
 
             logging.info(f"Successfully created audio file: {self.output_file}")
             if stderr:
                 logging.debug(f"FFmpeg stderr:\n{stderr.decode(sys.stderr.encoding or 'utf-8', errors='replace')}")
             if stdout:
-                 logging.debug(f"FFmpeg stdout:\n{stdout.decode(sys.stdout.encoding or 'utf-8', errors='replace')}")
+                 logging.debug(f"FFmpeg stdout:\n{stdout.decode(sys.stderr.encoding or 'utf-8', errors='replace')}")
 
             return self.output_file
         except ffmpeg.Error as e:
@@ -221,7 +221,7 @@ class MediaProcessor:
             # Run the ffmpeg command
             stdout, stderr = ffmpeg.run(
                 output, 
-                cmd=['ffmpeg', '-hide_banner'], 
+                cmd='ffmpeg -hide_banner', 
                 overwrite_output=True,
                 capture_stdout=True, 
                 capture_stderr=True

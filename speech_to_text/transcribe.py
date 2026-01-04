@@ -4,7 +4,7 @@ import logging
 
 
 supported_languages = {
-        "auto": "Auto-detect",  # Special case
+        "auto": "Auto-detect",  
         "en": "English",
         "zh": "Chinese",
         "de": "German",

@@ -1,6 +1,5 @@
 from LLMInterface import LLMInterface
 import logging
-import asyncio
 import requests
 import aiohttp
 

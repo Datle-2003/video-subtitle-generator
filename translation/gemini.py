@@ -1,19 +1,17 @@
 from .LLMInterface import LLMInterface
 import google.generativeai as genai
 import logging
-import os
-
 
 
 class GeminiLLM(LLMInterface):
     def __init__(self, model_name: str = "gemini-2.0-flash"):
         self._model_name = model_name
 
-        self.safety_settings = { # Cấu hình an toàn
+        self.safety_settings = { 
             "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
             "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
             "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
-            "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
+            "HARM_CATEGORY_DANGGEROUS_CONTENT": "BLOCK_NONE",
             }
         self.model = genai.GenerativeModel(self._model_name, safety_settings=self.safety_settings)
         logging.info(f"GeminiLLM initialized with model: {self._model_name}")
