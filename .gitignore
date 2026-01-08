@@ -1,8 +1,102 @@
-.venv
-tests/
-output/
-whisper.cpp/
+# --- Python Backend ---
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Unit Test / Coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Logs and Databases
+*.log
+backend/app.log
+*.sqlite3
+celerybeat-schedule
+
+# --- Node.js / Frontend (subtitle-web-client) ---
+subtitle-web-client/node_modules/
+subtitle-web-client/npm-debug.log*
+subtitle-web-client/yarn-debug.log*
+subtitle-web-client/yarn-error.log*
+subtitle-web-client/pnpm-debug.log*
+subtitle-web-client/dist/
+subtitle-web-client/build/
+subtitle-web-client/.env
+subtitle-web-client/.env.local
+subtitle-web-client/.env.development.local
+subtitle-web-client/.env.test.local
+subtitle-web-client/.env.production.local
+
+# Vite
+subtitle-web-client/*.tsbuildinfo
+
+# --- Media & Generated Files ---
+# Audio/Video inputs
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.flv
+*.wmv
+*.mp3
+*.wav
+*.m4a
+
+# Subtitle outputs (if stored locally during dev)
 *.srt
-run.sh
+*.vtt
+*.ass
+
+# Temp files logic
+output/
+tmp/
+temp/
+
+# --- IDE & System ---
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
