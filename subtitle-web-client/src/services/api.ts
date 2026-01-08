@@ -9,8 +9,8 @@ export interface TaskStatus {
     error?: string;
 }
 
-// Use environment variable for production, fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Use environment variable for production, fallback to Render URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://subtitle-translation.onrender.com";
 
 export const uploadAudio = async (
     audioBlob: Blob,
