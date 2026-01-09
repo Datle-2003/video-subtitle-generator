@@ -44,16 +44,14 @@ class Transcriber:
             best_of=1,
             vad_filter=True,
             vad_parameters=dict(min_silence_duration_ms=500),
-            language=input_language,  # None = auto-detect
+            language=input_language,  # None = auto detect
             condition_on_previous_text=False,
             temperature=0
         )
         
-        # Log detected language if auto-detected
         if input_language is None:
             logging.info(f"Auto-detected language: {info.language} (probability: {info.language_probability:.2%})")
 
-        # copy into transcription result
         segment_list = []
         for segment in segments:
             segment_list.append(Segment(segment.start, segment.end, segment.text))

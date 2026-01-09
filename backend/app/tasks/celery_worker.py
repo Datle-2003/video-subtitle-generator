@@ -13,8 +13,8 @@ import logging
 setup_logging("app.log")
 
 # Configuration
-MAX_VIDEO_DURATION_SECONDS = 30 * 60  # 30 minutes max
-GROQ_THRESHOLD_SECONDS = 10 * 60       # Use Groq for videos > 10 minutes
+MAX_VIDEO_DURATION_SECONDS = 30 * 60  # 30 mins
+GROQ_THRESHOLD_SECONDS = 10 * 60       # Use Groq for videos > 10 mins
 
 whisper_model = None
 
@@ -43,7 +43,6 @@ def transcribe_with_hybrid(file_path: str, whisper_lang: str = None) -> tuple:
     """
     global whisper_model
     
-    # Get audio duration first
     audio_duration = get_audio_duration(file_path)
     logging.info(f"Audio duration: {audio_duration:.2f} seconds ({audio_duration/60:.1f} minutes)")
     
@@ -51,17 +50,15 @@ def transcribe_with_hybrid(file_path: str, whisper_lang: str = None) -> tuple:
     if audio_duration > MAX_VIDEO_DURATION_SECONDS:
         raise ValueError(f"Video too long: {audio_duration/60:.1f} minutes. Maximum allowed: {MAX_VIDEO_DURATION_SECONDS/60:.0f} minutes")
     
-    # Try Groq API first (better for cloud deployment - no heavy model loading)
     try:
-        logging.info("[Hybrid] Trying Groq Whisper API...")
+        logging.info("Trying Groq Whisper API...")
         groq_transcriber = GroqTranscriber(model_name="whisper-large-v3")
         segments_list = groq_transcriber.transcribe(file_path, input_language=whisper_lang)
         return segments_list, audio_duration, "groq"
     except Exception as e:
-        logging.warning(f"[Hybrid] Groq API failed: {e}")
+        logging.warning(f" Groq API failed: {e}")
     
-    # Fallback to local Whisper if Groq fails
-    logging.info("[Hybrid] Falling back to local Whisper Turbo...")
+    logging.info("Falling back to local Whisper Turbo...")
     if whisper_model is None:
         raise RuntimeError("Groq API failed and local Whisper model not available")
     
@@ -75,11 +72,9 @@ def process_video_task(self, file_path, target_lang, metadata: dict):
         logging.info(f"Processing task for file: {file_path}")
         self.update_state(state='PROGRESS', meta={'progress': 5, 'message': 'Analyzing audio...'})
         
-        # Get source language from metadata (None = auto-detect)
         source_lang = metadata.get('source_lang', 'auto') if metadata else 'auto'
         whisper_lang = None if source_lang == 'auto' else source_lang
         
-        # Use hybrid transcription (Groq for >10min, local for <=10min)
         self.update_state(state='PROGRESS', meta={'progress': 10, 'message': 'Transcribing...'})
         segments_list, total_duration, transcriber_used = transcribe_with_hybrid(file_path, whisper_lang)
         
@@ -89,21 +84,18 @@ def process_video_task(self, file_path, target_lang, metadata: dict):
         subtitle_processor = SubtitleProcessor()
         segments_list = subtitle_processor.merge_segments(segments_list)
         
-        # Generate initial SRT (Source Language)
+        # generate initial SRT (source)
         source_srt_content = subtitle_processor.create_srt_content(segments_list)
         
-        # Save temporary SRT for translation input
         base_name = os.path.splitext(file_path)[0]
         source_srt_path = f"{base_name}_source.srt"
         with open(source_srt_path, "w", encoding="utf-8") as f:
             f.write(source_srt_content)
 
         all_text = subtitle_processor.get_text_from_segments(segments_list)
-        # Disable spaCy NER - title case approach caused too many false positives
-        # proper_nouns = subtitle_processor.extract_proper_nouns(all_text)
-        # proper_nouns = []  # Empty list = no NER hints in prompt
+        # proper_nouns = []  
             
-        # 2. Update metadata setup
+        # update metadata
         if metadata:
             metadata['duration'] = total_duration
             # metadata['proper_nouns'] = proper_nouns
@@ -111,7 +103,7 @@ def process_video_task(self, file_path, target_lang, metadata: dict):
         self.update_state(state='PROGRESS', meta={'progress': 50, 'message': 'Translating...'})
         logging.info("Translating...")
         
-        gemini_provider = GeminiTranslator(model_name="gemini-2.5-flash")
+        # gemini_provider = GeminiTranslator(model_name="gemini-2.5-flash")
         openrouter_provider = OpenRouterTranslator(
             priority_model="xiaomi/mimo-v2-flash:free",
             fallback_model="mistralai/devstral-2512:free"
@@ -130,13 +122,12 @@ def process_video_task(self, file_path, target_lang, metadata: dict):
         with open(translated_srt_path, "r", encoding="utf-8") as f:
             final_srt_content = f.read()
 
-        # Cleanup temp srt files
-        # if os.path.exists(source_srt_path):
-        #     os.remove(source_srt_path)
-        # if os.path.exists(translated_srt_path):
-        #     os.remove(translated_srt_path)
+        # cleanup temp srt files
+        if os.path.exists(source_srt_path):
+            os.remove(source_srt_path)
+        if os.path.exists(translated_srt_path):
+            os.remove(translated_srt_path)
 
-        # 4. Finish
         return {
             "status": "completed",
             "srt_content": final_srt_content,
@@ -147,6 +138,6 @@ def process_video_task(self, file_path, target_lang, metadata: dict):
         logging.error(f"Task failed: {e}")
         return {"status": "failed", "error": str(e)}
     finally:
-        # Cleanup original upload
+        # cleanup original upload
         if os.path.exists(file_path):
             os.remove(file_path)

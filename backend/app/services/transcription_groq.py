@@ -1,7 +1,3 @@
-"""
-Groq Whisper API Transcription Service
-Uses Groq's hosted Whisper Large v3 for faster and more accurate transcription.
-"""
 import os
 import logging
 from groq import Groq
@@ -58,26 +54,23 @@ class GroqTranscriber:
         
         try:
             with open(audio_path, "rb") as audio_file:
-                # Build transcription parameters
                 params = {
                     "file": (os.path.basename(audio_path), audio_file),
                     "model": self.model_name,
-                    "response_format": "verbose_json",  # Get timestamps
+                    "response_format": "verbose_json",  # get timestamps
                     "temperature": 0.0,
                 }
                 
-                # Add language if specified (None = auto-detect)
                 if input_language:
                     params["language"] = input_language
                 
-                # Call Groq API
+                # call Groq API
                 transcription = self.client.audio.transcriptions.create(**params)
             
-            # Log detected language if available
             if hasattr(transcription, 'language'):
                 logging.info(f"[Groq] Detected language: {transcription.language}")
             
-            # Parse segments from response
+            # parse segments from response
             segment_list = []
             
             if hasattr(transcription, 'segments') and transcription.segments:
@@ -106,10 +99,6 @@ class GroqTranscriber:
 
 
 def get_audio_duration(audio_path: str) -> float:
-    """
-    Get the duration of an audio file in seconds.
-    Uses ffprobe for accurate duration detection.
-    """
     import subprocess
     import json
     

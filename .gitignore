@@ -1,4 +1,3 @@
-# --- Python Backend ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -22,7 +21,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual Environments
 .env
 .venv
 env/
@@ -31,7 +29,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Unit Test / Coverage
 htmlcov/
 .tox/
 .nox/
@@ -46,13 +43,11 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Logs and Databases
 *.log
 backend/app.log
 *.sqlite3
 celerybeat-schedule
 
-# --- Node.js / Frontend (subtitle-web-client) ---
 subtitle-web-client/node_modules/
 subtitle-web-client/npm-debug.log*
 subtitle-web-client/yarn-debug.log*
@@ -66,11 +61,8 @@ subtitle-web-client/.env.development.local
 subtitle-web-client/.env.test.local
 subtitle-web-client/.env.production.local
 
-# Vite
 subtitle-web-client/*.tsbuildinfo
 
-# --- Media & Generated Files ---
-# Audio/Video inputs
 *.mp4
 *.mov
 *.avi
@@ -81,17 +73,14 @@ subtitle-web-client/*.tsbuildinfo
 *.wav
 *.m4a
 
-# Subtitle outputs (if stored locally during dev)
 *.srt
 *.vtt
 *.ass
 
-# Temp files logic
 output/
 tmp/
 temp/
 
-# --- IDE & System ---
 .idea/
 .vscode/
 *.swp

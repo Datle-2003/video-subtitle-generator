@@ -1,5 +1,3 @@
-# define celery to handle background tasks
-# receive task from message queue (redis)
 import os
 from celery import Celery
 from dotenv import load_dotenv
@@ -10,7 +8,7 @@ REDIS_URL = os.getenv("REDIS_URL")
 celery_app = Celery(
     "video_subtitle",
     broker=REDIS_URL, # define message queue
-    backend=REDIS_URL, # define result backend
+    backend=REDIS_URL, # define place to store task results
     include=["app.tasks.celery_worker"]
 )
 

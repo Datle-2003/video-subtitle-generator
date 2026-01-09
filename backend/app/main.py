@@ -15,8 +15,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Local Frontend
-        "https://video-subtitle-generator-plum.vercel.app", # Your Vercel Frontend
+        "http://localhost:5173",  
+        "https://video-subtitle-generator-plum.vercel.app", 
     ], 
     allow_credentials=True,
     allow_methods=["*"],
@@ -50,8 +50,8 @@ async def generate_subtitle(
             shutil.copyfileobj(file.file, f)
             logging.info(f"File saved to {temp_filename}")  
 
-        # Check audio duration before processing (max 30 minutes)
-        MAX_DURATION_SECONDS = 30 * 60  # 30 minutes
+        # allow video up to 30 mins
+        MAX_DURATION_SECONDS = 30 * 60
         from app.services.transcription_groq import get_audio_duration
         try:
             duration = get_audio_duration(temp_filename)

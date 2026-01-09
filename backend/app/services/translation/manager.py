@@ -86,7 +86,7 @@ class Translator:
                 
             except Exception as e:
                 logging.error(f"Critical error in chunk translation: {e}")
-                translated_blocks.append(chunk_text) # 
+                translated_blocks.append(chunk_text)
 
         for match in self.subtitle_block_regex.finditer(content):
             block_len = len(match.group(0))

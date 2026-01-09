@@ -46,7 +46,6 @@ class OpenRouterTranslator(BaseTranslationProvider):
             if model == "xiaomi/mimo-v2-flash:free":
                 extra_body = {"reasoning": {"enabled": True}}
 
-            # Retry logic per model
             for attempt in range(retry_count + 1):
                 try:
                     logging.info(f"Translating with {model}, attempt {attempt + 1}")
@@ -56,7 +55,6 @@ class OpenRouterTranslator(BaseTranslationProvider):
                             {"role": "user", "content": full_prompt}
                         ],
                         extra_body=extra_body,
-                        # temperature=0.1 # Some free models might not support explicit temp or handle it differently, keep it default or low
                     )
                     
                     content = completion.choices[0].message.content
@@ -66,7 +64,6 @@ class OpenRouterTranslator(BaseTranslationProvider):
                         raise ValueError("Empty response from model")
 
                     # Parse JSON
-                    # Handle potential markdown code blocks ```json ... ```
                     import re
                     match = re.search(r'\[.*\]', content, re.DOTALL)
                     if match:
@@ -87,14 +84,13 @@ class OpenRouterTranslator(BaseTranslationProvider):
                          if attempt < retry_count:
                              time.sleep(2 ** attempt)
                          else:
-                             break # allow fallback to next model
+                             break 
                     else:
                         if attempt < retry_count:
                             time.sleep(1)
                         else:
-                            break # allow fallback
+                            break
             
-            # If we are here, retries exhausted for this model. Proceed to next model in outer loop.
             logging.warning(f"Exhausted retries for {model}. Switching to next model if available.")
 
         logging.error("All models failed.")

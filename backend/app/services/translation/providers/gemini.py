@@ -66,11 +66,11 @@ class GeminiTranslator(BaseTranslationProvider):
                 logging.error(f"Gemini API Error attempt {attempt+1}: {e}")
                 
                 if "429" in str(e) or "quota" in str(e).lower():
-                    wait_time = min(60, 10 * (attempt + 1))  # 10s, 20s, 30s... max 60s
+                    wait_time = min(60, 10 * (attempt + 1))  
                     logging.info(f"Rate limited. Waiting {wait_time}s before retry...")
                     time.sleep(wait_time)
                 elif attempt < retry_count:
-                    time.sleep(2 ** attempt)  # 1s, 2s, 4s
+                    time.sleep(2 ** attempt)  # 1, 2, 4, ... seconds
                 
                 if attempt == retry_count:
                     break

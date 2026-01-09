@@ -9,22 +9,20 @@ class SubtitleProcessor:
         self.max_chars = max_chars
         self.min_chars = min_chars
         self.end_punctuations = [".", "!", "?", "..."]
-        self.nlp = None  # Lazy load spacy
+        self.nlp = None 
 
     def _get_attr(self, segment, attr):
-        """Helper to get attribute from Segment object or dict."""
         if isinstance(segment, dict):
             return segment.get(attr)
         return getattr(segment, attr, None)
 
     def merge_segments(self, segments):
-        """Merge short segments to create better translation context."""
+        # merge short segments based on time gap and char count
         if not segments:
             return []
 
         merged = []
 
-        # Initialize first segment - convert to dict format
         first_seg = segments[0]
         current = {
             "start": self._get_attr(first_seg, "start"),
@@ -48,6 +46,7 @@ class SubtitleProcessor:
 
             should_merge = False
 
+            # time gap too large, or if text after merge is too long -> not merge
             if time_gap > self.max_gap:
                 should_merge = False
             elif estimated_length > self.max_chars:
@@ -89,7 +88,6 @@ class SubtitleProcessor:
             f.write(srt_content)
         
     def get_text_from_segments(self, segments):
-        """Extract all text from segments."""
         texts = []
         for segment in segments:
             text = self._get_attr(segment, "text")
@@ -98,11 +96,9 @@ class SubtitleProcessor:
         return "\n".join(texts)
     
     def extract_proper_nouns(self, text: str) -> list:
-        """Extract proper nouns (names, places, organizations) using spaCy NER."""
         if not text:
             return []
         
-        # Lazy load spacy
         if self.nlp is None:
             try:
                 import spacy
@@ -122,10 +118,8 @@ class SubtitleProcessor:
                 logging.error(f"Failed to load SpaCy: {e}")
                 return []
         
-        # Title case the text to help spaCy detect proper nouns
-        # Whisper often outputs lowercase text which confuses NER
-        text_for_ner = text.title()
-        doc = self.nlp(text_for_ner)
+        # process text
+        doc = self.nlp(text)
         
         proper_nouns = set()
         for ent in doc.ents:
@@ -145,6 +139,7 @@ class SubtitleProcessor:
         return list(proper_nouns)
     
     @staticmethod
+    # convert seconds to srt timestamp, eg: (30s) -> (00:00:30,000)
     def format_timestamp(seconds: float) -> str:
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
